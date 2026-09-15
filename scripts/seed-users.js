@@ -17,8 +17,8 @@ const { MongoClient } = require("mongodb");
 const bcrypt = require("bcryptjs");
 
 const USERS = [
-  { username: "admin1", plaintextPassword: "@Admin1234", role: "Admin" },
-  { username: "trader1", plaintextPassword: "@Trader1234", role: "Trader" },
+  { username: "admin1", plaintextPassword: "Replace_me", role: "Admin" },
+  { username: "trader1", plaintextPassword: "Replace_me", role: "Trader" },
 ];
 
 const DATABASE_NAME = "renewable_assets";
