@@ -1,0 +1,64 @@
+version: 0.2
+
+# This buildspec is the "fast feedback" stage of the pipeline: lint, build,
+# unit tests, and dependency/Sonar scanning. Veracode/Coverity run as a
+# separate, parallel CodeBuild project (longer-running, async upload-and-poll
+# scans) that gates the manual-approval stage before deploy - see the plan
+# doc for the full CodePipeline stage breakdown.
+
+phases:
+  install:
+    runtime-versions:
+      dotnet: 10.0
+      nodejs: 22
+    commands:
+      - echo "Installing backend dependencies"
+      - dotnet restore RenewableAssetSystem.sln
+      - echo "Pinning npm version"
+      - npm install -g npm@11.19.0
+      - echo "Installing frontend dependencies"
+      - cd assets-ui && npm ci && cd ..
+
+  pre_build:
+    commands:
+      - echo "Linting backend"
+      - dotnet format --verify-no-changes RenewableAssetSystem.sln
+      - echo "Linting frontend"
+      - cd assets-ui && npm run lint && cd ..
+
+  build:
+    commands:
+      - echo "Building backend"
+      - dotnet build RenewableAssetSystem.sln --configuration Release --no-restore
+      - echo "Building frontend"
+      - cd assets-ui && npm run build && cd ..
+
+  post_build:
+    commands:
+      - echo "Running backend unit/integration tests with coverage"
+      - dotnet test RenewableAssetSystem.sln --no-build --configuration Release
+          /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=../../coverage/backend/
+
+      - echo "Running frontend unit tests with coverage"
+      - cd assets-ui && npm run test:ci && cd ..
+
+      - echo "Running fuzzy-match regression report (non-blocking signal, printed for visibility)"
+      - cd assets-ui && npm run test:fuzzy-report || true && cd ..
+
+      - echo "Dependency vulnerability scans"
+      - cd assets-ui && npm audit --audit-level=high && cd ..
+      - dotnet list RenewableAssetSystem.sln package --vulnerable --include-transitive
+
+      - echo "SonarQube scan (quality gate failure fails this stage)"
+      - sonar-scanner
+          -Dsonar.projectKey=renewable-asset-system
+          -Dsonar.sources=src,assets-ui/src
+          -Dsonar.tests=tests,assets-ui/src/__tests__
+          -Dsonar.cs.opencover.reportsPaths=coverage/backend/coverage.opencover.xml
+          -Dsonar.javascript.lcov.reportPaths=assets-ui/coverage/lcov.info
+          -Dsonar.qualitygate.wait=true
+
+artifacts:
+  files:
+    - '**/*'
+  base-directory: assets-ui/build

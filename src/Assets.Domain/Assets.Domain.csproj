@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Assets.Domain</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- MongoDB.Bson only (not the full driver) - see note in Asset.cs on
+         this deliberate, documented trade-off for MVP simplicity. -->
+    <PackageReference Include="MongoDB.Bson" Version="2.24.0" />
+  </ItemGroup>
+
+</Project>
