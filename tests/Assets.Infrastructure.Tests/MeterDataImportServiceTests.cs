@@ -1,4 +1,5 @@
 using Assets.Domain.Assets;
+using Assets.Domain.MeterData;
 using Assets.Infrastructure.MeterData;
 using Assets.Infrastructure.Persistence;
 using FluentAssertions;
